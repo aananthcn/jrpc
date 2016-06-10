@@ -47,7 +47,7 @@ void main(void)
 	printf("Going to call functions of \"app_sum\" remotely...\n");
 	jrpc_call("app_sum", "add2", &result, "%d%d", 108, 27);
 	printf("Result = %d\n\n", result);
-	jrpc_call("app_sum", "add3", &result, "%d%d", 1000000, 1000, 1);
+	jrpc_call("app_sum", "add3", &result, "%d%d%d", 1000000, 1000, 1);
 	printf("Result = %d\n\n", result);
 	jrpc_call("app_sum", "getinfo", string, "");
 	printf("Return string = %s\n", string);
