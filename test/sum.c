@@ -15,14 +15,11 @@ int add_2(void *ret, char *afmt);
 int add_3(void *ret, char *afmt);
 int getinfo(void *ret, char *afmt);
 
-
 struct if_details ifs[] = {
-	{ "add2", add_2, "%d%d", "%d" },
-	{ "add3", add_3, "%d%d%d", "%d" },
-	{ "getinfo", getinfo, "", "%s" }
+	{"add2", add_2, "%d%d", "%d"},
+	{"add3", add_3, "%d%d%d", "%d"},
+	{"getinfo", getinfo, "", "%s"}
 };
-
-
 
 int add_2(void *ret, char *afmt)
 {
@@ -30,7 +27,7 @@ int add_2(void *ret, char *afmt)
 	int *result;
 
 	/* jrpc interfaces needs to call the following to get arguments */
-	if(jrpc_scanargs(afmt, &a, &b) < 0)
+	if (jrpc_scanargs(afmt, &a, &b) < 0)
 		return -1;
 
 	/* get the return address using the macro call */
@@ -42,20 +39,18 @@ int add_2(void *ret, char *afmt)
 	return 0;
 }
 
-
 int add_3(void *ret, char *afmt)
 {
 	int a, b, c;
 	int *result;
 
-	if(jrpc_scanargs(afmt, &a, &b, &c) < 0)
+	if (jrpc_scanargs(afmt, &a, &b, &c) < 0)
 		return -1;
 	result = RETURN_POINTER(ret, int);
 	*result = a + b + c;
 
 	return 0;
 }
-
 
 int getinfo(void *ret, char *afmt)
 {
@@ -69,17 +64,16 @@ int getinfo(void *ret, char *afmt)
 	return 0;
 }
 
-
 void main(void)
 {
 	int sleep_s = 5 * 60;
 	int i;
 
 	printf("Initializing jrpc...\n");
-	jrpc_init(); // establishes connection with server and creates a thread
+	jrpc_init();		// establishes connection with server and creates a thread
 
 	printf("Registering this's public interfaces with jrpc...\n");
-	jrpc_register("app_sum", sizeof(ifs)/sizeof(ifs[0]), ifs, NULL);
+	jrpc_register("app_sum", sizeof(ifs) / sizeof(ifs[0]), ifs, NULL);
 
 	for (i = 0; i < sleep_s; i++) {
 		printf("\"app_sum\" will sleep for %d secs\n", sleep_s--);

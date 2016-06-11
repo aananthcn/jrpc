@@ -13,12 +13,9 @@
 
 int getinfo(void *ret, char *afmt);
 
-
 struct if_details ifs[] = {
-	{ "getinfo", getinfo, "", "%s" }
+	{"getinfo", getinfo, "", "%s"}
 };
-
-
 
 int getinfo(void *ret, char *afmt)
 {
@@ -32,17 +29,16 @@ int getinfo(void *ret, char *afmt)
 	return 0;
 }
 
-
 void main(void)
 {
 	int result;
 	char string[4096];
 
 	printf("Initializing jrpc...\n");
-	jrpc_init(); // establishes connection with server and creates a thread
+	jrpc_init();		// establishes connection with server and creates a thread
 
 	printf("Registering this's public interfaces with jrpc...\n");
-	jrpc_register("app_avg", sizeof(ifs)/sizeof(ifs[0]), ifs, NULL);
+	jrpc_register("app_avg", sizeof(ifs) / sizeof(ifs[0]), ifs, NULL);
 
 	printf("Going to call functions of \"app_sum\" remotely...\n");
 	jrpc_call("app_sum", "add2", &result, "%d%d", 108, 27);

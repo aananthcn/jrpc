@@ -29,27 +29,25 @@
  * 
  * return: positive or negative number
  */
-int ej_load_buf(char *buf, json_t **root)
+int ej_load_buf(char *buf, json_t ** root)
 {
 	int flags = 0;
 
 	json_error_t error;
 
-	if(!buf) {
+	if (!buf) {
 		printf("%s(), invalid arguments!\n", __func__);
 		return -1;
 	}
 
 	*root = json_loads(buf, flags, &error);
-	if(*root == NULL) {
+	if (*root == NULL) {
 		printf("error: %s\n", error.text);
 		return -1;
 	}
 
 	return 0;
 }
-
-
 
 /*************************************************************************
  * function: ej_store_buf
@@ -62,7 +60,7 @@ int ej_load_buf(char *buf, json_t **root)
  * 
  * return: positive or negative number
  */
-int ej_store_buf(json_t *root, char *buf, int max)
+int ej_store_buf(json_t * root, char *buf, int max)
 {
 	if ((root == NULL) || (buf == NULL)) {
 		printf("Error: %s(): invalid arguments\n", __func__);
@@ -73,8 +71,6 @@ int ej_store_buf(json_t *root, char *buf, int max)
 
 	return 0;
 }
-
-
 
 /*************************************************************************
  * function: ej_load_file
@@ -87,19 +83,19 @@ int ej_store_buf(json_t *root, char *buf, int max)
  * 
  * return: positive or negative number
  */
-int ej_load_file(char *file, json_t **root)
+int ej_load_file(char *file, json_t ** root)
 {
 	int flags = 0;
 
 	json_error_t error;
 
-	if(!file) {
+	if (!file) {
 		printf("%s(), invalid file passed!\n", __FUNCTION__);
 		return -1;
 	}
 
 	*root = json_load_file(file, flags, &error);
-	if(*root == NULL) {
+	if (*root == NULL) {
 		printf("error: %s, line %d: %s\n", file,
 		       error.line, error.text);
 		return -1;
@@ -107,8 +103,6 @@ int ej_load_file(char *file, json_t **root)
 
 	return 0;
 }
-
-
 
 /*************************************************************************
  * function: ej_store_file
@@ -121,11 +115,11 @@ int ej_load_file(char *file, json_t **root)
  * 
  * return: positive or negative number
  */
-int ej_store_file(json_t *root, char *file)
+int ej_store_file(json_t * root, char *file)
 {
 	int flags, ret;
 
-	if(!file) {
+	if (!file) {
 		printf("%s(), invalid file passed!\n", __FUNCTION__);
 		return -1;
 	}
@@ -133,13 +127,11 @@ int ej_store_file(json_t *root, char *file)
 	/* dump to a temporary file */
 	flags = JSON_INDENT(8);
 	ret = json_dump_file(root, file, flags);
-	if(ret < 0)
+	if (ret < 0)
 		return -1;
 
 	return 0;
 }
-
-
 
 /*************************************************************************
  * function: ej_get_int
@@ -148,12 +140,12 @@ int ej_store_file(json_t *root, char *file)
  *
  * return: positive or negative number
  */
-int ej_get_int(json_t *root, char *name, int *value)
+int ej_get_int(json_t * root, char *name, int *value)
 {
 	json_t *obj;
 
 	obj = json_object_get(root, name);
-	if(obj == NULL) {
+	if (obj == NULL) {
 		*value = 0;
 		return -1;
 	}
@@ -162,8 +154,6 @@ int ej_get_int(json_t *root, char *name, int *value)
 	return 0;
 }
 
-
-
 /*************************************************************************
  * function: ej_get_string
  *
@@ -171,17 +161,17 @@ int ej_get_int(json_t *root, char *name, int *value)
  *
  * return: positive or negative number
  */
-int ej_get_string(json_t *root, char *name, char *value)
+int ej_get_string(json_t * root, char *name, char *value)
 {
 	json_t *obj;
 
-	if(!json_is_object(root)) {
+	if (!json_is_object(root)) {
 		printf("%s(): invalid json arg passed\n", __FUNCTION__);
 		return -1;
 	}
 
 	obj = json_object_get(root, name);
-	if(obj == NULL) {
+	if (obj == NULL) {
 		*value = '\0';
 		return -1;
 	}
@@ -190,8 +180,6 @@ int ej_get_string(json_t *root, char *name, char *value)
 	return 0;
 }
 
-
-
 /*************************************************************************
  * function: ej_set_int
  *
@@ -199,19 +187,17 @@ int ej_get_string(json_t *root, char *name, char *value)
  *
  * return: positive or negative number
  */
-int ej_set_int(json_t *root, char *name, int value)
+int ej_set_int(json_t * root, char *name, int value)
 {
 	json_t *obj;
 
 	obj = json_object_get(root, name);
-	if(obj == NULL) {
+	if (obj == NULL) {
 		return -1;
 	}
 
 	return json_integer_set(obj, value);
 }
-
-
 
 /*************************************************************************
  * function: ej_set_string
@@ -220,20 +206,19 @@ int ej_set_int(json_t *root, char *name, int value)
  *
  * return: positive or negative number
  */
-int ej_set_string(json_t *root, char *name, char *value)
+int ej_set_string(json_t * root, char *name, char *value)
 {
 	json_t *obj;
 
 	obj = json_object_get(root, name);
-	if(obj == NULL) {
+	if (obj == NULL) {
 		return -1;
 	}
 
 	return json_string_set(obj, value);
 }
 
-
-int ej_add_int(json_t **root, char *name, int value)
+int ej_add_int(json_t ** root, char *name, int value)
 {
 	json_t *new;
 
@@ -243,13 +228,13 @@ int ej_add_int(json_t **root, char *name, int value)
 	}
 
 	new = json_pack("{\nsi\n}", name, value);
-	if (new  == NULL)
+	if (new == NULL)
 		return -1;
 
 	return json_object_update(*root, new);
 }
 
-int ej_add_string(json_t **root, char *name, char *value)
+int ej_add_string(json_t ** root, char *name, char *value)
 {
 	json_t *new;
 
@@ -259,9 +244,8 @@ int ej_add_string(json_t **root, char *name, char *value)
 	}
 
 	new = json_pack("{\nss\n}", name, value);
-	if(new  == NULL)
+	if (new == NULL)
 		return -1;
 
 	return json_object_update(*root, new);
 }
-
