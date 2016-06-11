@@ -23,19 +23,19 @@
 struct jrpcd_item_desc {
 	void *data;
 	uint32_t size;
-	LIST_ENTRY(jrpcd_item_desc) entries;
+	 LIST_ENTRY(jrpcd_item_desc) entries;
 };
 
 struct jrpcd_queue_desc {
 	/* Connection ID of the client creating this queue */
 	uint32_t cid;
-	/* Queue lenght or number of items in the queue*/
+	/* Queue lenght or number of items in the queue */
 	uint16_t len;
 	/* Mutex and condition variable to support blocking queue */
 	pthread_mutex_t mutex;
 	pthread_cond_t dq_cv;
 	/* Linked list to hold the queue items */
-	LIST_HEAD(q_head, jrpcd_item_desc) q;
+	 LIST_HEAD(q_head, jrpcd_item_desc) q;
 };
 
 int8_t jrpcd_queue_init(void)

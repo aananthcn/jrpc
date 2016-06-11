@@ -16,4 +16,4 @@
 int8_t jrpcd_client_create(uint32_t csock, uint32_t cid, pthread_t * tid,
 			   pthread_t * rid, void *tx_q);
 
-#endif	//JRPCD_CLIENT_H
+#endif				//JRPCD_CLIENT_H

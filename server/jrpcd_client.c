@@ -72,7 +72,7 @@ void *jrpcd_client_receive_thread(void *arg)
 	fd_set readfds;
 	int32_t rc;
 	uint32_t recv_bytes;
-	uint8_t *buffer;
+	uint8_t *buff;
 
 	LOG_VERBOSE("Rx thread created for cid: %d", data->cid);
 
@@ -81,8 +81,8 @@ void *jrpcd_client_receive_thread(void *arg)
 	pthread_setcanceltype(PTHREAD_CANCEL_DEFERRED, NULL);
 
 	/* Allocate memory to receive data */
-	buffer = (uint8_t *) malloc(RX_BUFF_MAX_SZ);
-	if (buffer == NULL) {
+	buff = (uint8_t *) malloc(RX_BUFF_MAX_SZ);
+	if (buff == NULL) {
 		LOG_ERR("%s", "malloc failed");
 		goto exit_0;
 	}
@@ -98,20 +98,18 @@ void *jrpcd_client_receive_thread(void *arg)
 			continue;
 		}
 
-		if ((0 == jrpcd_exit_pending()) && 
-			FD_ISSET(data->sock, &readfds)) {
+		if ((0 == jrpcd_exit_pending()) &&
+		    FD_ISSET(data->sock, &readfds)) {
 
-			memset(buffer, 0, RX_BUFF_MAX_SZ);
-			
+			memset(buff, 0, RX_BUFF_MAX_SZ);
+
 			/* Data available. Read now. */
-			recv_bytes =
-			    recv(data->sock, buffer, RX_BUFF_MAX_SZ, 0);
+			recv_bytes = recv(data->sock, buff, RX_BUFF_MAX_SZ, 0);
 			if (recv_bytes > 0) {
 				LOG_INFO("Received for cid %d : %s", data->cid,
-					 buffer);
+					 buff);
 				/* Process received data */
-				jrpcd_process_recv(data->cid, buffer,
-						   recv_bytes);
+				jrpcd_process_recv(data->cid, buff, recv_bytes);
 			}
 		}
 	}

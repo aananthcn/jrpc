@@ -6,7 +6,7 @@
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
- 
+
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -18,6 +18,7 @@
 #include "version.h"
 #include "debug.h"
 #include "jrpcd_server.h"
+#include "jrpcd.h"
 
 #define DEFAULT_PORT                           5000
 
@@ -36,7 +37,7 @@ void print_usage()
 int main(int argc, char *argv[])
 {
 	int32_t c;
-	int8_t *host = NULL;
+	char *host = NULL;
 	uint32_t port = DEFAULT_PORT;
 
 	LOG_INFO("jrpcd %d.%d.%d starting...", VER_MAJ, VER_MIN, VER_PATCH);

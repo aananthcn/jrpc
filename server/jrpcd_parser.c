@@ -16,14 +16,17 @@
 #include "jrpcd_parser.h"
 #include "debug.h"
 
-void *jrpcd_parser_init(int8_t * data, uint32_t size)
+void *jrpcd_parser_init(char *data, uint32_t size)
 {
 	json_t *root;
 	json_error_t error;
 
 	root = NULL;
-	root = json_loadb(data, size, 0, &error);
+	root = json_loads(data, 0, &error);
 	if (!root) {
+		LOG_ERR("%s", "unable to do json_loads");
+		printf("\terror: %s\n", error.text);
+		printf("\tDATA: %s\n", data);
 		return ((void *)NULL);
 	}
 
@@ -41,7 +44,7 @@ int8_t jrpcd_parser_get_api(void *obj, uint8_t * api_type)
 {
 	json_t *root = (json_t *) obj;
 	json_t *api;
-	const int8_t *api_str;
+	const char *api_str;
 
 	if (root == NULL) {
 		LOG_ERR("%s",
@@ -86,11 +89,11 @@ int8_t jrpcd_parser_get_api(void *obj, uint8_t * api_type)
 	return -1;
 }
 
-int8_t jrpcd_parser_get_snode(void *obj, int8_t * snode, uint16_t size)
+int8_t jrpcd_parser_get_snode(void *obj, char *snode, uint16_t size)
 {
 	json_t *root = (json_t *) obj;
 	json_t *node;
-	const int8_t *node_str;
+	const char *node_str;
 
 	if (root == NULL) {
 		LOG_ERR("%s",
@@ -124,11 +127,11 @@ int8_t jrpcd_parser_get_snode(void *obj, int8_t * snode, uint16_t size)
 	return -1;
 }
 
-int8_t jrpcd_parser_get_dnode(void *obj, int8_t * dnode, uint16_t size)
+int8_t jrpcd_parser_get_dnode(void *obj, char *dnode, uint16_t size)
 {
 	json_t *root = (json_t *) obj;
 	json_t *node;
-	const int8_t *node_str;
+	const char *node_str;
 
 	if (root == NULL) {
 		LOG_ERR("%s",
@@ -233,12 +236,12 @@ void *jrpcd_parser_register_get_intf(void *obj, uint16_t index)
 	return NULL;
 }
 
-int8_t jrpcd_parser_register_intf_get_name(void *vintf, int8_t * name,
+int8_t jrpcd_parser_register_intf_get_name(void *vintf, char *name,
 					   uint16_t size)
 {
 	json_t *intf = (json_t *) vintf;
 	json_t *node;
-	const int8_t *node_str;
+	const char *node_str;
 
 	if (intf == NULL) {
 		LOG_ERR("%s", "Interface pointer is NULL");
@@ -271,12 +274,12 @@ int8_t jrpcd_parser_register_intf_get_name(void *vintf, int8_t * name,
 	return -1;
 }
 
-int8_t jrpcd_parser_register_intf_get_arg(void *vintf, int8_t * arg,
+int8_t jrpcd_parser_register_intf_get_arg(void *vintf, char *arg,
 					  uint16_t size)
 {
 	json_t *intf = (json_t *) vintf;
 	json_t *node;
-	const int8_t *node_str;
+	const char *node_str;
 
 	if (intf == NULL) {
 		LOG_ERR("%s", "Interface pointer is NULL");
@@ -309,12 +312,12 @@ int8_t jrpcd_parser_register_intf_get_arg(void *vintf, int8_t * arg,
 	return -1;
 }
 
-int8_t jrpcd_parser_register_intf_get_ret(void *vintf, int8_t * ret,
+int8_t jrpcd_parser_register_intf_get_ret(void *vintf, char *ret,
 					  uint16_t size)
 {
 	json_t *intf = (json_t *) vintf;
 	json_t *node;
-	const int8_t *node_str;
+	const char *node_str;
 
 	if (intf == NULL) {
 		LOG_ERR("%s", "Interface pointer is NULL");
@@ -347,11 +350,11 @@ int8_t jrpcd_parser_register_intf_get_ret(void *vintf, int8_t * ret,
 	return -1;
 }
 
-int8_t jrpcd_parser_call_get_intf(void *obj, int8_t * intf, uint16_t size)
+int8_t jrpcd_parser_call_get_intf(void *obj, char *intf, uint16_t size)
 {
 	json_t *root = (json_t *) obj;
 	json_t *node;
-	const int8_t *node_str;
+	const char *node_str;
 
 	if (root == NULL) {
 		LOG_ERR("%s",

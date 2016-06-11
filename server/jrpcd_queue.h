@@ -19,4 +19,4 @@ void jrpcd_queue_destroy(void *queue);
 uint32_t jrpcd_queue_get(void *queue, void **data);
 int8_t jrpcd_queue_put(void *queue, void *data, uint32_t size);
 
-#endif	//JRPCD_QUEUE_H
+#endif				//JRPCD_QUEUE_H

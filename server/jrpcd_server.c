@@ -12,9 +12,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <unistd.h>
 #include <netinet/in.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <arpa/inet.h>
 
 #include "jrpcd_server.h"
 #include "jrpcd.h"
@@ -23,7 +25,7 @@
 /* Socket to accept incoming clients */
 static int sock_fd;
 
-int8_t jrpcd_server_init(int8_t * host, uint32_t port)
+int8_t jrpcd_server_init(char *host, uint32_t port)
 {
 	struct sockaddr_in addr;
 
@@ -38,7 +40,7 @@ int8_t jrpcd_server_init(int8_t * host, uint32_t port)
 
 	addr.sin_family = AF_INET;
 
-	/* If host is provided bind to that IP else bind to any interface*/
+	/* If host is provided bind to that IP else bind to any interface */
 	if (host == NULL) {
 		addr.sin_addr.s_addr = INADDR_ANY;
 	} else {
@@ -94,8 +96,7 @@ void jrpcd_server_loop(void)
 			continue;
 		}
 
-		if ((0 == jrpcd_exit_pending()) && 
-			FD_ISSET(sock_fd, &readfds)) {
+		if ((0 == jrpcd_exit_pending()) && FD_ISSET(sock_fd, &readfds)) {
 
 			csock = accept(sock_fd, NULL, 0);
 			if (csock < 0) {
@@ -116,4 +117,3 @@ void jrpcd_server_loop(void)
 	/* Do clean up */
 	jrpcd_server_cleanup();
 }
-

@@ -15,11 +15,10 @@
 
 #define JRPCD_MAX_MSG_SZ		(1024u)
 
-int8_t jrpcd_main(int8_t * host, uint32_t port);
+int8_t jrpcd_main(char *host, uint32_t port);
 int8_t jrpcd_new_client(uint32_t csock);
-int8_t jrpcd_process_recv(uint32_t cid, uint8_t * data, uint32_t size);
+int8_t jrpcd_process_recv(uint32_t cid, uint8_t *data, uint32_t size);
 void jrpcd_exit(void);
 bool jrpcd_exit_pending(void);
 
-#endif	//JRPCD_H
-
+#endif				//JRPCD_H

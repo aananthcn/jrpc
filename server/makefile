@@ -3,8 +3,7 @@
 # constants
 IFLAGS = -I. 
 
-CFLAGS = -g -Wall ${IFLAGS}
-#CFLAGS = -g -Wall -Werror ${IFLAGS}
+CFLAGS = -g -Wall -Werror ${IFLAGS}
 LFLAGS = -g -lpthread -ljansson
 
 MKDIR  = mkdir -p

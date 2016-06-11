@@ -26,7 +26,7 @@
 #define NODE_NAME_MAX_SZ		32
 #define INTF_NAME_MAX_SZ		32
 #define INTF_ARG_MAX_SZ			32
-#define INTF_RET_MAX_SZ		 	 4
+#define INTF_RET_MAX_SZ			 4
 
 #define REGISTER_RESP_FMT		"{\"api\":\"return\",\"snode\":\"jrpcd\",\"dnode\":\"%s\",\"if\":\"register\",\"ret\":{\"type\":\"int\",\"val\":%d}}"
 #define CALL_ERR_RESP_FMT		"{\"api\":\"call\",\"snode\":\"jrpcd\",\"dnode\":\"%s\",\"if\":\"%s\",\"ret\":{\"type\":\"int\",\"val\":%d}}"
@@ -35,22 +35,22 @@ static uint8_t exit_pending;
 
 /* Structure to hold the interface definitions */
 struct jrpcd_intf_desc {
-	int8_t name[INTF_NAME_MAX_SZ];	/* Interface name */
-	int8_t arg[INTF_ARG_MAX_SZ];	/* Interface arguments string*/
-	int8_t ret[INTF_RET_MAX_SZ];	/* Interface return type string*/
+	char name[INTF_NAME_MAX_SZ];	/* Interface name */
+	char arg[INTF_ARG_MAX_SZ];	/* Interface arguments string */
+	char ret[INTF_RET_MAX_SZ];	/* Interface return type string */
 
 	LIST_ENTRY(jrpcd_intf_desc) entries;
 };
 
 /* Structure to hold the node instance */
 struct jrpcd_node_desc {
-	int8_t name[NODE_NAME_MAX_SZ];	/* Node name */
-	uint32_t csock;			/* Socket to communicate to the node */
-	uint32_t cid;			/* Client ID for the node */
-	uint16_t num_intf;		/* Number of interfaces in the node */
-	pthread_t tid;			/* Transmit thread id */
-	pthread_t rid;			/* Receive thread id */
-	void *tx_q;			/* Transmit data queue instance */
+	char name[NODE_NAME_MAX_SZ];	/* Node name */
+	uint32_t csock;		/* Socket to communicate to the node */
+	uint32_t cid;		/* Client ID for the node */
+	uint16_t num_intf;	/* Number of interfaces in the node */
+	pthread_t tid;		/* Transmit thread id */
+	pthread_t rid;		/* Receive thread id */
+	void *tx_q;		/* Transmit data queue instance */
 	LIST_HEAD(ifs_head, jrpcd_intf_desc) intf_list;	/* Inteface list */
 
 	LIST_ENTRY(jrpcd_node_desc) entries;
@@ -76,7 +76,7 @@ void jrpcd_destroy_node(struct jrpcd_node_desc *node)
 	jrpcd_queue_destroy(node->tx_q);
 
 	/* Can't cancel if called from the receive thread */
-	if(pthread_self() != node->rid) {
+	if (pthread_self() != node->rid) {
 		pthread_cancel(node->rid);
 	}
 
@@ -88,8 +88,8 @@ void jrpcd_destroy_node(struct jrpcd_node_desc *node)
 	free(node);
 
 	/* Terminate execution if requested */
-	if(pthread_self() == node->rid) {
-		/* Process sent exit message, exit receive thread*/
+	if (pthread_self() == node->rid) {
+		/* Process sent exit message, exit receive thread */
 		pthread_exit(0);
 		/* Should not come here */
 	}
@@ -143,11 +143,11 @@ struct jrpcd_node_desc *jrpcd_get_node(uint32_t cid)
 	return NULL;
 }
 
-struct jrpcd_node_desc *jrpcd_get_node_by_name(int8_t * name)
+struct jrpcd_node_desc *jrpcd_get_node_by_name(char *name)
 {
 	struct jrpcd_node_desc *node;
 
-	/* Find matching node by node name*/
+	/* Find matching node by node name */
 	LIST_FOREACH(node, &node_list, entries) {
 		if (strcmp(name, node->name) == 0) {
 			return node;
@@ -156,11 +156,11 @@ struct jrpcd_node_desc *jrpcd_get_node_by_name(int8_t * name)
 	return NULL;
 }
 
-void jrpcd_call_send_err_resp(void *queue, int8_t * dnode, int8_t * intf)
+void jrpcd_call_send_err_resp(void *queue, char *dnode, char *intf)
 {
-	int8_t *buffer = NULL;
+	char *buffer = NULL;
 
-	buffer = (int8_t *) malloc(JRPCD_MAX_MSG_SZ);
+	buffer = (char *)malloc(JRPCD_MAX_MSG_SZ);
 	if (buffer == NULL) {
 		LOG_ERR("%s", "malloc failed");
 		goto exit_0;
@@ -174,11 +174,11 @@ void jrpcd_call_send_err_resp(void *queue, int8_t * dnode, int8_t * intf)
 	return;
 }
 
-void jrpcd_register_send_resp(void *queue, int8_t * dnode, uint8_t val)
+void jrpcd_register_send_resp(void *queue, char *dnode, uint8_t val)
 {
-	int8_t *buffer = NULL;
+	char *buffer = NULL;
 
-	buffer = (int8_t *) malloc(JRPCD_MAX_MSG_SZ);
+	buffer = (char *)malloc(JRPCD_MAX_MSG_SZ);
 	if (buffer == NULL) {
 		LOG_ERR("%s", "malloc failed");
 		goto exit_0;
@@ -194,7 +194,7 @@ void jrpcd_register_send_resp(void *queue, int8_t * dnode, uint8_t val)
 
 void jrpcd_process_register(void *json_obj, uint32_t cid)
 {
-	int8_t snode_name[NODE_NAME_MAX_SZ];
+	char snode_name[NODE_NAME_MAX_SZ];
 	struct jrpcd_node_desc *node;
 	struct jrpcd_node_desc *dup_node;
 	uint16_t intf_index = 0;
@@ -235,8 +235,7 @@ void jrpcd_process_register(void *json_obj, uint32_t cid)
 			struct jrpcd_intf_desc *intf_desc;
 			LOG_INFO("Parsing interface %d", intf_index);
 
-			intf_desc =
-			    (struct jrpcd_intf_desc *)
+			intf_desc = (struct jrpcd_intf_desc *)
 			    malloc(sizeof(struct jrpcd_intf_desc));
 			if (intf_desc == NULL) {
 				LOG_ERR("%s", "malloc failed");
@@ -291,16 +290,16 @@ void jrpcd_process_exit(void *json_obj, uint32_t cid)
 	/* Destroy node and free up resources */
 	/* !!!! Below call will not return !!!! */
 	jrpcd_destroy_node(snode);
-exit_0:
+ exit_0:
 	return;
 }
 
-void jrpcd_process_call(void *json_obj, uint32_t cid, uint8_t * data,
+void jrpcd_process_call(void *json_obj, uint32_t cid, uint8_t *data,
 			uint32_t size)
 {
-	int8_t dnode_name[NODE_NAME_MAX_SZ];
-	int8_t snode_name[NODE_NAME_MAX_SZ];
-	int8_t intf_name[INTF_NAME_MAX_SZ];
+	char dnode_name[NODE_NAME_MAX_SZ];
+	char snode_name[NODE_NAME_MAX_SZ];
+	char intf_name[INTF_NAME_MAX_SZ];
 	struct jrpcd_node_desc *snode;
 	struct jrpcd_node_desc *dnode;
 	uint8_t *buffer;
@@ -361,12 +360,12 @@ void jrpcd_process_call(void *json_obj, uint32_t cid, uint8_t * data,
 	return;
 }
 
-void jrpcd_process_return(void *json_obj, uint32_t cid, uint8_t * data,
+void jrpcd_process_return(void *json_obj, uint32_t cid, uint8_t *data,
 			  uint32_t size)
 {
-	int8_t dnode_name[NODE_NAME_MAX_SZ];
-	int8_t snode_name[NODE_NAME_MAX_SZ];
-	int8_t intf_name[INTF_NAME_MAX_SZ];
+	char dnode_name[NODE_NAME_MAX_SZ];
+	char snode_name[NODE_NAME_MAX_SZ];
+	char intf_name[INTF_NAME_MAX_SZ];
 	struct jrpcd_node_desc *snode;
 	struct jrpcd_node_desc *dnode;
 	uint8_t *buffer;
@@ -425,14 +424,14 @@ void jrpcd_process_return(void *json_obj, uint32_t cid, uint8_t * data,
 	return;
 }
 
-int8_t jrpcd_process_recv(uint32_t cid, uint8_t * data, uint32_t size)
+int8_t jrpcd_process_recv(uint32_t cid, uint8_t *data, uint32_t size)
 {
 	void *json_obj = NULL;
 	uint8_t api_type;
 	int8_t ret = -1;
 
 	/* Initialize JSON parser */
-	json_obj = jrpcd_parser_init(data, size);
+	json_obj = jrpcd_parser_init((char *)data, size);
 	if (json_obj == NULL) {
 		LOG_ERR("%s", "parser failed");
 		goto exit_0;
@@ -468,15 +467,17 @@ int8_t jrpcd_process_recv(uint32_t cid, uint8_t * data, uint32_t size)
 	return ret;
 }
 
-void jrpcd_exit(void) {
+void jrpcd_exit(void)
+{
 	exit_pending = 1;
 }
 
-bool jrpcd_exit_pending(void) {
+bool jrpcd_exit_pending(void)
+{
 	return exit_pending;
 }
 
-int8_t jrpcd_main(int8_t * host, uint32_t port)
+int8_t jrpcd_main(char *host, uint32_t port)
 {
 	LOG_VERBOSE("%s", "jrpcd_main");
 
@@ -494,6 +495,8 @@ int8_t jrpcd_main(int8_t * host, uint32_t port)
 	}
 	jrpcd_dump();
 	jrpcd_cleanup();
+
+	return 0;
 }
 
 int8_t jrpcd_new_client(uint32_t csock)
