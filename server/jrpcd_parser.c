@@ -16,21 +16,10 @@
 #include "jrpcd_parser.h"
 #include "debug.h"
 
-void *jrpcd_parser_init(char *data, uint32_t size)
+void jrpcd_parser_init(void **root, char *data)
 {
-	json_t *root;
-	json_error_t error;
-
-	root = NULL;
-	root = json_loads(data, 0, &error);
-	if (!root) {
-		LOG_ERR("%s", "unable to do json_loads");
-		printf("\terror: %s\n", error.text);
-		printf("\tDATA: %s\n", data);
-		return ((void *)NULL);
-	}
-
-	return (void *)root;
+	*root = NULL;
+	*root = (void *)json_loads(data, 0, NULL);
 }
 
 void jrpcd_parser_cleanup(void *obj)

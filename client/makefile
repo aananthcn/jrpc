@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := all
 
 # constants
-IFLAGS = -I. 
+IFLAGS = -I. -I../server
 
 CFLAGS = -g -fPIC -Wall -Werror ${IFLAGS}
 LFLAGS = -g -shared -lpthread -ljansson

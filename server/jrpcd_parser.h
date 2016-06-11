@@ -17,7 +17,7 @@
 #define JRPCD_API_RETURN		0x2
 #define JRPCD_API_EXIT			0x3
 
-void *jrpcd_parser_init(char *data, uint32_t size);
+void jrpcd_parser_init(void ** root, char *data);
 void jrpcd_parser_cleanup(void *obj);
 int8_t jrpcd_parser_get_api(void *obj, uint8_t * api_type);
 int8_t jrpcd_parser_get_snode(void *obj, char *snode, uint16_t size);

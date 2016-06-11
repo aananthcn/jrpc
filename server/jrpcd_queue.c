@@ -129,8 +129,7 @@ int8_t jrpcd_queue_put(void *queue, void *data, uint32_t size)
 		goto exit_0;
 	}
 
-	qitem =
-	    (struct jrpcd_item_desc *)malloc(sizeof(struct jrpcd_item_desc));
+	qitem = (struct jrpcd_item_desc*)malloc(sizeof(struct jrpcd_item_desc));
 	if (qitem == NULL) {
 		LOG_ERR("%s", "malloc failed");
 		goto exit_0;

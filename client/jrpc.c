@@ -19,6 +19,7 @@
 #include <jansson.h>
 #include "jrpc.h"
 #include "ejson.h"
+#include "debug.h"
 
 struct node_details {
 	char name[NAME_SIZE];
@@ -30,31 +31,38 @@ struct node_details {
  *  global variables
  */
 pthread_t RecvThread;
-enum jrpc_states ClientState;
+enum jrpc_states ClientState = JRPC_OFF;
+enum jrpc_states RxThreadState = JRPC_OFF;
 int SockFd;
 struct node_details ThisNode;
-json_t *JMsg;
+json_t *JMsgCall, *JMsgRcall;
 
 pthread_mutex_t rcall_mutex;
 pthread_cond_t rcall_condvar;
-pthread_mutex_t return_mutex;
-pthread_cond_t return_condvar;
+pthread_mutex_t ret_mutex;
+pthread_cond_t ret_condvar;
 
 /******************************************************************************
  * static functions
  */
 static int get_sockfd(void)
 {
-	if (ClientState != JRPC_CONNECTED)
+	if (ClientState < JRPC_CONNECTED)
 		return -1;
 	else
 		return SockFd;
 }
 
 
-static json_t* get_msgjson(void)
+static json_t* get_rcalljson(void)
 {
-	return JMsg;
+	return JMsgRcall;
+}
+
+
+static json_t* get_calljson(void)
+{
+	return JMsgCall;
 }
 
 
@@ -74,11 +82,11 @@ int jrpc_scanargs(const char *fmt, ...)
 	char type[16];
 
 	/* parse the argument secion of incoming message */
-	jmsg = get_msgjson();
+	jmsg = get_rcalljson();
 	jarray = json_object_get(jmsg, "args");
 	if ((jarray == NULL) || (0 == (argc = json_array_size(jarray))))
 	{
-		printf("%s(), no array element \'ecus\' found\n", __func__);
+		LOG_ERR("%s", "no array element \'ecus\' found");
 		return -1;
 	}
 
@@ -86,13 +94,13 @@ int jrpc_scanargs(const char *fmt, ...)
 	va_start(ap, fmt); /* make ap to point 1st unamed arg */
 	for (i = c = 0, p = fmt; *p; p++, c++) {
 		if (*p != '%') {
-			printf("%s(): check format string @ %d\n", __func__, c);
+			LOG_ERR("%s %d", "check format string @", c);
 			continue;
 		}
 
 		jrow = json_array_get(jarray, i++);
 		if (!json_is_object(jrow)) {
-			printf("%s(), json array access failure\n", __func__);
+			LOG_ERR("%s", "json array access failure");
 			return -1;
 		}
 		ej_get_string(jrow, "type", type);
@@ -101,7 +109,7 @@ int jrpc_scanargs(const char *fmt, ...)
 		case 'd':
 			/* check if types requested and received are matching */
 			if ((type[0] != '%') || (type[1] != 'd')) {
-			       printf("%s(): arg %d type error!\n", __func__,i);
+			       LOG_ERR("%s%d", "type error with arg ", i);
 			       return -1;
 			}
 			ej_get_int(jrow, "val", va_arg(ap, int *));
@@ -109,13 +117,13 @@ int jrpc_scanargs(const char *fmt, ...)
 		case 's':
 			/* check if types requested and received are matching */
 			if ((type[0] != '%') || (type[1] != 's')) {
-			       printf("%s(): arg %d type error!\n", __func__,i);
+			       LOG_ERR("%s%d", "type error with arg ", i);
 			       return -1;
 			}
 			ej_get_string(jrow, "val", va_arg(ap, char *));
 			break;
 		default:
-			printf("Error: unsupported argument type\n");
+			LOG_ERR("%s", "Error: unsupported argument type");
 			retval = -1;
 			break;
 		}
@@ -149,8 +157,8 @@ int jrpc_exit(void)
 
 	pthread_mutex_destroy(&rcall_mutex);
 	pthread_cond_destroy(&rcall_condvar);
-	pthread_mutex_destroy(&return_mutex);
-	pthread_cond_destroy(&return_condvar);
+	pthread_mutex_destroy(&ret_mutex);
+	pthread_cond_destroy(&ret_condvar);
 
 	return retval;
 }
@@ -167,7 +175,7 @@ int jrpc_rcall(char *buffer)
 	json_t *jroot;
 	json_t *jobj;
         void *result;
-	char *rfmt;
+	char *rfmt, *afmt;
 	int i, sockfd, retval;
 	char interface[NAME_SIZE];
 	char caller[NAME_SIZE];
@@ -186,17 +194,25 @@ int jrpc_rcall(char *buffer)
 	for (i = 0; i < ThisNode.n_if; i++) {
 		if (strcmp(interface, ThisNode.ifl[i].if_name) == 0) {
 			fnptr = ThisNode.ifl[i].fnptr;
-			JMsg = jroot; // note: consumed by jrpc_scanargs()
-			retval = fnptr(result, ThisNode.ifl[i].afmt);
-			JMsg = NULL;
+			afmt = ThisNode.ifl[i].afmt;
+			JMsgRcall = jroot; // note: consumed by jrpc_scanargs()
+			LOG_VERBOSE("%s(void*, %s)", interface, afmt);
+			retval = fnptr(result, afmt);
+			JMsgRcall = NULL;
 			rfmt = ThisNode.ifl[i].rfmt;
 			break;
 		}
 	}
 	json_decref(jroot);
+
+	if (i >= ThisNode.n_if) {
+		LOG_ERR("%s: %s()", "invalid interface", interface);
+		return -1;
+	}
+
 	if ((retval < 0) || (result == NULL)) {
-		printf("%s(): rcall failed!\n", __func__);
-		printf("retval %d, result %p\n", retval, result);
+		LOG_ERR("%s", "rcall failed!");
+		LOG_INFO("retval %d, result %p", retval, result);
 		return -1;
 	}
 
@@ -223,7 +239,7 @@ int jrpc_rcall(char *buffer)
 	/* send the return info to jrpcd */
 	sockfd = get_sockfd();
 	if(sockfd < 0) {
-		printf("Error: jrpc_rcall cannot be completed!\n");
+		LOG_ERR("%s", "Error: jrpc_rcall cannot be completed!");
 		return -1;
 	}
 	write(sockfd, sendbuf, BUFF_SIZE);
@@ -241,16 +257,26 @@ int jrpc_rcall(char *buffer)
  */
 int jrpc_call(char *node, char *if_name, void *ret, char *afmt, ...)
 {
-	int retval, sockfd, i;
+	int retval, sockfd;
 	va_list ap; /* var argument pointer */
 	char *p;
 	char buffer[BUFF_SIZE];
-	char token[NAME_SIZE];
 	char rfmt[NAME_SIZE];
+	int retry_cnt;
 
 	json_t *jroot;
 	json_t *jarray;
 	json_t *jrow;
+
+	struct timespec ts;
+
+	/* wait till libjrpc is initialized */
+	retry_cnt = 10;
+	while (ClientState != JRPC_INITIALISED) {
+		usleep(100*1000);
+		if (retry_cnt-- <= 0)
+			break;
+	}
 
 	/* translate the call info to json format */
 	jroot = json_object();
@@ -279,7 +305,7 @@ int jrpc_call(char *node, char *if_name, void *ret, char *afmt, ...)
 			ej_add_string(&jrow, "val", va_arg(ap, char *));
 			break;
 		default:
-			printf("Error: unsupported argument type\n");
+			LOG_ERR("%s", "Error: unsupported argument type");
 			retval = -1;
 			break;
 		}
@@ -295,38 +321,42 @@ int jrpc_call(char *node, char *if_name, void *ret, char *afmt, ...)
 	/* send the translated call info to jrpcd */
 	sockfd = get_sockfd();
 	if(sockfd < 0) {
-		printf("Error: jrpc_call cannot be completed!\n");
+		LOG_ERR("%s", "Error: jrpc_call cannot be completed!");
 		return -1;
 	}
 	write(sockfd, buffer, BUFF_SIZE);
 
-#if JRPC_UNIT_TESTING
-	char dummy[] = "{\"if\": \"add\", \"api\": \"return\", \"dnode\": \"this\", \"snode\": \"this\", \"ret\": {\"type\": \"%d\", \"val\": 11}}";
-	jroot = json_object();
-	ej_load_buf(dummy, &jroot);
-#else
 	/* wait for the call to return and process the ret val */
-	pthread_cond_wait(&rcall_condvar, &rcall_mutex);
-	jroot = get_msgjson();
-#endif
-	jrow = json_object_get(jroot, "ret");
-	ej_get_string(jrow, "type", token);
+	(void) pthread_mutex_lock(&rcall_mutex);
+	clock_gettime(CLOCK_REALTIME, &ts);
+	ts.tv_sec += 5;
+	pthread_cond_timedwait(&rcall_condvar, &rcall_mutex, &ts);
+	(void) pthread_mutex_unlock(&rcall_mutex);
 
-	/* validate return types */
-	for (i = 0, rfmt[i] = '\0'; i < ThisNode.n_if; i++) {
-		if (strcmp(if_name, ThisNode.ifl[i].if_name) == 0) {
-			strcpy(rfmt, ThisNode.ifl[i].rfmt);
-			break;
-		}
+	/* get the json structure from remote node and check for errors */
+	jroot = get_calljson();
+	if (jroot == NULL) {
+		LOG_ERR("%s", "call-json pointer is NULL");
+		goto error;
+	}
+	jrow = json_object_get(jroot, "ret");
+	if (jrow == NULL) {
+		LOG_ERR("%s", "can't get return structure");
+		goto error;
 	}
 
-	/* check validation results, previous errors and set ret value */
-	if ((retval == -1) || (rfmt[i] == '\0') || (strcmp(rfmt, token) != 0)) {
-		printf("%s(): error! check arg and ret formats\n",  __func__);
+	/* get return value from json and check for errors */
+	ej_get_string(jrow, "type", rfmt);
+	if ((retval == -1) || (rfmt == NULL) || (rfmt[0] != '%')) {
+		LOG_ERR("%s", "error! check arg and ret formats");
+		LOG_VERBOSE("if_name: %s, afmt = %s, rfmt = %s", if_name, afmt,
+			    rfmt);
 		*((int*)ret) = 0;
 		json_decref(jrow);
-		return -1;
+		goto error;
 	}
+
+	/* copy result to return argument from the caller */
 	if ((rfmt[0] == '%') && (rfmt[1] == 'd'))
 		ej_get_int(jrow, "val", ((int*)ret));
 	else
@@ -334,9 +364,13 @@ int jrpc_call(char *node, char *if_name, void *ret, char *afmt, ...)
 
 	/* clean up and notify */
 	json_decref(jrow);
-	pthread_cond_signal(&return_condvar);
+	pthread_cond_signal(&ret_condvar);
 
 	return 0;
+
+error:
+	pthread_cond_signal(&ret_condvar);
+	return -1;
 }
 
 
@@ -351,10 +385,19 @@ int jrpc_register(char *node, int n_if, struct if_details *ifl, void *cbptr)
 	json_t *jarray;
 	int size, i, sockfd;
 	char buffer[BUFF_SIZE];
+	int retry_cnt;
 
 	if ( (node == NULL) || ((n_if > 0) && (ifl == NULL))) {
-		printf("Error: input pointers not correct\n");
+		LOG_ERR("%s", "Error: input pointers not correct");
 		return -1;
+	}
+
+	/* wait till libjrpc is initialized */
+	retry_cnt = 10;
+	while (ClientState != JRPC_INITIALISED) {
+		usleep(100*1000);
+		if (retry_cnt-- <= 0)
+			break;
 	}
 
 	/* convert if_details to json format */
@@ -380,7 +423,7 @@ int jrpc_register(char *node, int n_if, struct if_details *ifl, void *cbptr)
 	/* send the json data to jrpcd daemon */
 	sockfd = get_sockfd();
 	if(sockfd < 0) {
-		printf("Error: jrpc_call cannot be completed!\n");
+		LOG_ERR("%s", "Error: jrpc_call cannot be completed!");
 		return -1;
 	}
 	write(sockfd, buffer, BUFF_SIZE);
@@ -412,14 +455,18 @@ void * jrpc_rx_thread(void *arg)
 	char buffer[BUFF_SIZE];
 	char token[NAME_SIZE];
 
+	struct timespec ts;
+
 	sockfd = *((int *)arg);
-	while (ClientState == JRPC_CONNECTED) {
+	LOG_VERBOSE("%s %d", "wait for messages from server socket ", sockfd);
+	RxThreadState = JRPC_INITIALISED;
+	while (ClientState >= JRPC_CONNECTED) {
 		len = read(sockfd, buffer, BUFF_SIZE);
 		if (len < 0) {
-			printf("%s(): received error message, retrying...\n",
-			       __func__);
+			LOG_ERR("%s", "received error message, retrying...");
 			continue;
 		};
+		LOG_VERBOSE("%s", "received a message...");
 
 		/* at this point it is expected that the buffer contains a valid
 		 * message from jrpcd in json format */
@@ -429,20 +476,32 @@ void * jrpc_rx_thread(void *arg)
 
 		/* check for valid api */
 		if (strcmp(token, "call") == 0) {
+			LOG_VERBOSE("%s", "invoking remote call");
 			jrpc_rcall(buffer);
 		}
 		else if (strcmp(token, "return") == 0) {
+			JMsgCall = jroot; // jrpc_call will use this!!
+			LOG_VERBOSE("%s", "handling return of prev call\n");
 			pthread_cond_signal(&rcall_condvar);
-			JMsg = jroot;
-			pthread_cond_wait(&return_condvar, &return_mutex);
-			JMsg = NULL;
+
+			/* wait for the caller to read the return value */
+			(void) pthread_mutex_lock(&ret_mutex);
+			clock_gettime(CLOCK_REALTIME, &ts);
+			ts.tv_sec += 5;
+			pthread_cond_timedwait(&ret_condvar, &ret_mutex, &ts);
+			(void) pthread_mutex_unlock(&ret_mutex);
+			JMsgCall = NULL;
+		}
+		else if (strcmp(token, "ack") == 0) {
+			LOG_VERBOSE("%s", "acknowledgment for prev message");
 		}
 		else {
-			printf("%s(): received an invalid message\n", __func__);
+			LOG_ERR("%s", "received an invalid message");
 		}
 
 		json_decref(jroot);
 	}
+	RxThreadState = JRPC_OFF;
 
 	return NULL;
 }
@@ -461,9 +520,10 @@ int jrpc_init(void)
 	pthread_attr_t attr;
 	int port;
 	char ip[64];
+	int retry_cnt;
 
 	if (ClientState != JRPC_OFF) {
-		printf("Error: jrpc_init shall be called only once\n");
+		LOG_ERR("%s", "Error: jrpc_init shall be called only once");
 		return -1;
 	}
 	ClientState = JRPC_CONNECTING;
@@ -471,7 +531,7 @@ int jrpc_init(void)
 	/* create a TCP socket for connecting to jrpcd */
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
-		printf("Socket error\n");
+		LOG_ERR("%s", "Socket error");
 		goto error;
 	}
 
@@ -484,7 +544,7 @@ int jrpc_init(void)
 	servaddr.sin_port = htons(port);
 	status = inet_pton(AF_INET, ip, &servaddr.sin_addr);
 	if (status <= 0) {
-		printf("inet_pton error\n");
+		LOG_ERR("%s", "inet_pton error");
 		goto error;
 	}
 
@@ -492,7 +552,7 @@ int jrpc_init(void)
 	status = connect(sockfd, (const struct sockaddr *) &servaddr,
 			 sizeof(servaddr));
 	if (status < 0) {
-		printf("\nError: connect failed!\n");
+		LOG_ERR("%s", "Error: connect failed!");
 		goto error;
 	}
 	ClientState = JRPC_CONNECTED;
@@ -504,16 +564,25 @@ int jrpc_init(void)
 	/* Create a thread to manage the connection */
 	status = pthread_attr_init(&attr);
 	if (status != 0) {
-		printf("\nError: unable to init thread attr\n");
+		LOG_ERR("%s", "Error: unable to init thread attr");
 		goto error;
 	}
 
 	status = pthread_create(&RecvThread, &attr, jrpc_rx_thread, &sockfd);
 	pthread_attr_destroy(&attr);
 	if (status != 0) {
-		printf("\nError: can't create receive thread!\n");
+		LOG_ERR("%s", "Error: can't create receive thread!");
 		goto error;
 	}
+
+	/* wait till rx thread is initialized */
+	retry_cnt = 10;
+	while (RxThreadState != JRPC_INITIALISED) {
+		usleep(100*1000);
+		if (retry_cnt-- <= 0)
+			break;
+	}
+	ClientState = JRPC_INITIALISED;
 
 
 	return 0;

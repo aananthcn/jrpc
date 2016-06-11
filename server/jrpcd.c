@@ -28,7 +28,7 @@
 #define INTF_ARG_MAX_SZ			32
 #define INTF_RET_MAX_SZ			 4
 
-#define REGISTER_RESP_FMT		"{\"api\":\"return\",\"snode\":\"jrpcd\",\"dnode\":\"%s\",\"if\":\"register\",\"ret\":{\"type\":\"int\",\"val\":%d}}"
+#define REGISTER_RESP_FMT		"{\"api\":\"ack\",\"snode\":\"jrpcd\",\"dnode\":\"%s\",\"if\":\"register\",\"ret\":{\"type\":\"int\",\"val\":%d}}"
 #define CALL_ERR_RESP_FMT		"{\"api\":\"call\",\"snode\":\"jrpcd\",\"dnode\":\"%s\",\"if\":\"%s\",\"ret\":{\"type\":\"int\",\"val\":%d}}"
 
 static uint8_t exit_pending;
@@ -431,9 +431,9 @@ int8_t jrpcd_process_recv(uint32_t cid, uint8_t *data, uint32_t size)
 	int8_t ret = -1;
 
 	/* Initialize JSON parser */
-	json_obj = jrpcd_parser_init((char *)data, size);
+	jrpcd_parser_init(&json_obj, (char *)data);
 	if (json_obj == NULL) {
-		LOG_ERR("%s", "parser failed");
+		LOG_INFO("%s ==> \"%s\"", "Invalid json message", (char *)data);
 		goto exit_0;
 	}
 
