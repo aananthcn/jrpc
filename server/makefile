@@ -3,8 +3,8 @@
 # constants
 IFLAGS = -I. 
 
-CFLAGS = -g -Wall -Werror ${IFLAGS}
-LFLAGS = -g -lpthread -ljansson
+CFLAGS = -Wall -Werror ${IFLAGS}
+LFLAGS = -lpthread -ljansson
 
 MKDIR  = mkdir -p
 
@@ -24,7 +24,6 @@ objs = jrpcd.o  \
 	$(CC) -c $(CFLAGS) $^ -o $@
 
 
-
 executable: ${objs}
 	$(CC) -o ${TARGET} $^ $(LFLAGS)
 
@@ -34,5 +33,11 @@ clean:
 	$(RM) ${TARGET}
 
 
+debug: CFLAGS += -g -DDEBUG -Wall -Werror ${IFLAGS}
+debug: LFLAGS += -g -DDEBUG -lpthread -ljansson
+debug: executable
+
+
 all: executable
+
 

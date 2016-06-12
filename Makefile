@@ -9,6 +9,11 @@ all:
 	$(MAKE) -C server
 	$(MAKE) -C test
 
+debug:
+	${MKDIR} bin
+	$(MAKE) debug -C client
+	$(MAKE) debug -C server
+	$(MAKE) -C test
 
 clean:
 	$(MAKE) clean -C client

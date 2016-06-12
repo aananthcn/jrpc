@@ -19,7 +19,10 @@
 #define DEBUG_INFO	2
 #define DEBUG_ERR	4
 
-#define DEBUG		(DEBUG_VERBOSE | DEBUG_INFO | DEBUG_ERR)
+#ifdef DEBUG
+ #undef DEBUG
+ #define DEBUG		(DEBUG_VERBOSE | DEBUG_INFO | DEBUG_ERR)
+#endif
 
 #if (DEBUG) & DEBUG_VERBOSE
 #define LOG_VERBOSE(fmt, ...)	\

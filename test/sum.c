@@ -10,6 +10,7 @@
 #include <stdio.h>
 
 #include "jrpc.h"
+#include "debug.h"
 
 int add_2(void *ret, char *afmt);
 int add_3(void *ret, char *afmt);
@@ -75,8 +76,9 @@ void main(void)
 	printf("Registering this's public interfaces with jrpc...\n");
 	jrpc_register("app_sum", sizeof(ifs) / sizeof(ifs[0]), ifs, NULL);
 
-	for (i = 0; i < sleep_s; i++) {
-		printf("\"app_sum\" will sleep for %d secs\n", sleep_s--);
+	while (sleep_s-- > 0) {
+		LOG_VERBOSE("%s %d %s"\"app_sum\" will exit in another",
+			   sleep_s, "seconds");
 		sleep(1);
 	}
 

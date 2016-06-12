@@ -3,8 +3,8 @@
 # constants
 IFLAGS = -I. -I../server
 
-CFLAGS = -g -fPIC -Wall -Werror ${IFLAGS}
-LFLAGS = -g -shared -lpthread -ljansson
+CFLAGS = -fPIC -Wall -Werror ${IFLAGS}
+LFLAGS = -shared -lpthread -ljansson
 
 MKDIR  = mkdir -p
 
@@ -28,6 +28,11 @@ shared_object: ${objs}
 clean:
 	$(RM) ${objs} 
 	$(RM) ${TARGET}
+
+
+debug: CFLAGS = -g -DDEBUG -fPIC -Wall -Werror ${IFLAGS}
+debug: LFLAGS = -g -DDEBUG -shared -lpthread -ljansson 
+debug: shared_object 
 
 
 all: shared_object
