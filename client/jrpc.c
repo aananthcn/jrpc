@@ -580,7 +580,7 @@ int jrpc_init(void)
 	while (RxThreadState != JRPC_INITIALISED) {
 		usleep(100*1000);
 		if (retry_cnt-- <= 0)
-			break;
+			goto error;
 	}
 	ClientState = JRPC_INITIALISED;
 
