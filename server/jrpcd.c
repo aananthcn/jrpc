@@ -285,7 +285,9 @@ void jrpcd_process_exit(void *json_obj, uint32_t cid)
 	//TODO: Do we need to validate the snode string??
 
 	/* Since we won't be returning to the callee free up parser */
-	jrpcd_parser_cleanup(json_obj);
+	if(json_obj != NULL) {
+		jrpcd_parser_cleanup(json_obj);
+	}
 
 	/* Destroy node and free up resources */
 	/* !!!! Below call will not return !!!! */
