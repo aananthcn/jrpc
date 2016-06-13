@@ -13,7 +13,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define JRPCD_MAX_MSG_SZ		(1024u)
+#define JRPCD_MAX_MSG_SZ		(4 * 1024u)
 
 int8_t jrpcd_main(char *host, uint32_t port);
 int8_t jrpcd_new_client(uint32_t csock);

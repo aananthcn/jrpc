@@ -50,6 +50,8 @@ void main(void)
 	y = 20000;
 	z = 30000;
 
+	sleep(1);
+
 	printf("Going to call functions of \"app_sum\" remotely...\n");
 	gettimeofday(&t1, NULL);
 	jrpc_call("app_sum", "add2", &result, "%d%d", a, b);

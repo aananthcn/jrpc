@@ -106,8 +106,8 @@ void *jrpcd_client_receive_thread(void *arg)
 			/* Data available. Read now. */
 			recv_bytes = recv(data->sock, buff, RX_BUFF_MAX_SZ, 0);
 			if (recv_bytes > 0) {
-				LOG_INFO("Received for cid %d : %s", data->cid,
-					 buff);
+				LOG_INFO("Received for cid %d, %d bytes : %s",
+					  data->cid, recv_bytes, buff);
 				/* Process received data */
 				jrpcd_process_recv(data->cid, buff, recv_bytes);
 			}
