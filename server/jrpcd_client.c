@@ -97,7 +97,6 @@ void *jrpcd_client_receive_thread(void *arg)
 		} else if (rc == 0) {
 			continue;
 		}
-
 		if ((0 == jrpcd_exit_pending()) &&
 		    FD_ISSET(data->sock, &readfds)) {
 
@@ -110,6 +109,9 @@ void *jrpcd_client_receive_thread(void *arg)
 					  data->cid, recv_bytes, buff);
 				/* Process received data */
 				jrpcd_process_recv(data->cid, buff, recv_bytes);
+			} else {
+				LOG_ERR("CID : %d, Socket closed", data->cid);
+				goto exit_0;
 			}
 		}
 	}

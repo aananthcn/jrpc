@@ -145,10 +145,31 @@ int jrpc_scanargs(const char *fmt, ...)
  */
 int jrpc_exit(void)
 {
-	int retval;
+	char buffer[BUFF_SIZE];
+	int retval, sockfd;
+	json_t *jroot;
 
 	retval = 0;
 
+	/* translate the call info to json format */
+	jroot = json_object();
+	ej_add_string(&jroot, "api", "exit");
+	ej_add_string(&jroot, "snode", ThisNode.name);
+
+	memset(buffer, 0x0, BUFF_SIZE);
+	ej_store_buf(jroot, buffer, BUFF_SIZE);
+	json_decref(jroot);
+
+	/* send the return info to jrpcd */
+	sockfd = get_sockfd();
+	if(sockfd < 0) {
+		LOG_ERR("%s", "Error: jrpc_exit cannot be completed!");
+		/* proceed and cleanup anyway */
+	} else {
+		write(sockfd, buffer, strlen(buffer));
+	}
+
+	close(get_sockfd());
 	ClientState = JRPC_OFF;
 	usleep(10000); /* give 10ms deadline for the rx thread to exit */
 
@@ -470,8 +491,12 @@ void * jrpc_rx_thread(void *arg)
 		if (len < 0) {
 			LOG_ERR("%s", "received error message, retrying...");
 			continue;
-		};
-		LOG_VERBOSE("%s", "received a message...");
+		} 
+		else if (len == 0) {
+			LOG_VERBOSE("%s", "Connection closed by server");
+			break;
+		}
+		LOG_VERBOSE("received a message...%d bytes", len);
 
 		/* at this point it is expected that the buffer contains a valid
 		 * message from jrpcd in json format */
@@ -506,6 +531,8 @@ void * jrpc_rx_thread(void *arg)
 
 		json_decref(jroot);
 	}
+	close(sockfd);
+	ClientState = JRPC_OFF;
 	RxThreadState = JRPC_OFF;
 
 	return NULL;
